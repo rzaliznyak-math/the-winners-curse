@@ -1,0 +1,23 @@
+---
+title: "The Winner's Curse"
+subtitle: "Significance Testing is Not an Endorsement of the Treatment Effect"
+author: "Russ Zaliznyak <[rzaliznyak@gmail.com](mailto:rzaliznyak@gmail.com)>"
+date: "2025-11-01"
+execute:
+  echo: false
+format: 
+  html: 
+    css: style.css
+    toc: true
+    toc-expand: true
+    toc-indent: 1em
+  pdf:
+    documentclass: article
+    toc: true
+---
+
+# Introduction
+
+In February 2025 I shared [**Experiment Design & Analysis with NumPy Random**](https://rzaliznyak-math.github.io/numpy-random-p-value-power/){target="_blank"}. The goal was to give the reader the ability to use simulations to better understand how experiments are designed.
+
+In this paper we will double click into this topic to learn why _Significance Testing is Not an Endorsement of the Treatment Effect_.
