@@ -509,8 +509,9 @@ fig.update_layout(
     height = 300,
     title = f"Statistical Power = { (np.mean(np.where(alt_simulations > significance_threshold , 1 , 0))):.1%}"
 )
-
+fig.update_yaxes(showticklabels=False)
 fig.show()
+
 
 
 ```
