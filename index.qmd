@@ -36,7 +36,7 @@ control_mean = 0.65
 ```
 
 ## Significance Threshold
-We use a traditional _Significance Threshold_ of 0.05. If our test conditions are equal, 5% of the time we will accidentally and falsely detect a signal.
+We use a traditional _Significance Threshold_ of 0.05. If our test conditions are equal, 5% of the time we will accidentally and falsely detect a signal _(Type I Error)_.
 ```{python}
 #| echo: true
 #| code-fold: false
@@ -57,7 +57,7 @@ index_to_control_planned = mde / 100
 
 
 ## Statistical Power
-We use a traditional _Statistical Power_ of 0.80. If our _MDE_ is true, our experiment has an 80% chance of detecting statistical significance.
+We use a traditional _Statistical Power_ of 0.80. If our _MDE_ is true, our experiment has an 80% chance of detecting statistical significance. Our False Negative risk is 20% _(Type II error)_.
 
 ```{python}
 #| echo: true
@@ -68,7 +68,7 @@ power = 0.80
 ## Required Samples
 
 ```{python}
-#| code-summary: "<b>How to Calculate Required Samples</b>"
+#| code-summary: "<b>Method to Calculate Required Samples</b>"
 #| echo: true
 #| code-fold: true
 
@@ -161,3 +161,358 @@ def two_proportion_required_samples(
 
 ```
 
+
+```{python}
+#| echo: true
+#| code-fold: false
+
+(
+    control_required_samples,
+    treatment_required_samples,
+) = two_proportion_required_samples(
+    alpha,
+    power,
+    control_mean,
+    control_mean * index_to_control_planned,
+    control_to_treatment_ratio=1,
+    tail_type="one_tail",
+)
+
+
+```
+
+Control: `{python} f"{control_required_samples:,}"`<br>
+Treatment: `{python} f"{treatment_required_samples:,}"`<br>
+Total: `{python} f"{control_required_samples+treatment_required_samples:,}"`
+
+
+# Visualize Power
+
+
+## Null Distribution
+
+
+```{python}
+#| echo: false
+#| code-fold: false
+import numpy as np
+import plotly.graph_objects as go
+from numpy.random import binomial, seed
+import plotly.figure_factory as ff
+
+seed(5)
+NUMBER_SIMULATIONS = int(2e6)
+
+control_simulation_samples_0 = (
+    binomial(
+        control_required_samples,
+        control_mean,
+        NUMBER_SIMULATIONS,
+    )
+    / control_required_samples
+)
+control_simulation_samples_1 = (
+    binomial(
+        control_required_samples,
+        control_mean,
+        NUMBER_SIMULATIONS,
+    )
+    / control_required_samples
+)
+
+null_simulations = (
+    control_simulation_samples_1
+    - control_simulation_samples_0
+)
+
+
+significance_threshold = np.percentile(null_simulations, 95)
+```
+
+
+```{python}
+#| code-summary: "<b>Plot Null</b>"
+#| echo: true
+#| code-fold: true
+fig = ff.create_distplot(
+    [null_simulations[:10000]],
+    group_labels=["Null Distribution"],
+    show_hist=False,
+    show_rug=False,
+)
+fig.data[0].showlegend = False
+# Convert tuple traces to NumPy arrays so boolean masking works
+x = np.asarray(fig.data[0].x, dtype=float)
+y = np.asarray(fig.data[0].y, dtype=float)
+
+# Right-tail mask
+mask = x >= significance_threshold
+if mask.any():
+    x_tail = x[mask]
+    y_tail = y[mask]
+
+    # Interpolate y at the exact threshold to make a clean polygon
+    y_thresh = np.interp(significance_threshold, x, y)
+
+    # Closed polygon for shaded area
+    poly_x = np.concatenate(
+        ([significance_threshold], x_tail, [x_tail[-1], significance_threshold])
+    )
+    poly_y = np.concatenate(([y_thresh], y_tail, [0], [0]))
+
+    fig.add_trace(
+        go.Scatter(
+            x=poly_x,
+            y=poly_y,
+            hoverinfo = "skip",
+            fill="toself",
+            mode="lines",
+            showlegend = False,
+            line=dict(width=0),
+            fillcolor="rgba(255,0,0,0.3)",
+            name="<b>StatsSig</b>",
+        )
+    )
+    fig.add_trace(
+    go.Scatter(
+        hoverinfo="skip",
+        # name="μ",
+        name="avg",
+        x=[np.mean(null_simulations)],
+        y=[0.000],
+        mode="markers",
+        marker_symbol="circle",
+        showlegend=False,
+        marker=dict(
+            color="red",
+            size=20,
+            line=dict(color="black", width=3),
+        ),
+    )
+)
+
+# Vertical reference line
+fig.add_vline(
+    x=significance_threshold,
+    line_dash="dash",
+    line_color="red",
+    annotation_text=f"Threshold = {significance_threshold:.2%}",
+    annotation_position="top right",
+)
+
+fig.update_layout(
+    #title="Difference of Means — Right Tail Shaded (≥ 95th percentile)",
+    xaxis_tickformat=".1%",
+    height = 400,
+    width = 600
+)
+fig.update_yaxes(showticklabels=False)
+fig.data[0].hoverinfo = "skip"
+fig.show()
+null_fig = fig
+
+
+```
+<br>
+The _Null Distribution_ shows possible outcomes we expect to see if _Control_ and _Treatment_ are identical.
+Anything that falls beyond `{python} f"{np.percentile(null_simulations,95):.2%}"` will be deemed _Statistically Significant_.
+
+## Alternative Hypothesis
+
+```{python}
+#| code-summary: "<b>Plot Alternative</b>"
+#| echo: true
+#| code-fold: true
+from numpy.random import binomial, seed
+
+control_simulation_samples = (
+    binomial(
+        control_required_samples,
+        control_mean,
+        NUMBER_SIMULATIONS,
+    )
+    / control_required_samples
+)
+treatment_simulation_samples = (
+    binomial(
+        treatment_required_samples,
+        control_mean * index_to_control_planned,
+        NUMBER_SIMULATIONS,
+    )
+    / treatment_required_samples
+)
+
+alt_simulations = (
+    treatment_simulation_samples
+    - control_simulation_samples
+)
+
+
+fig = ff.create_distplot(
+    [alt_simulations[:10000]],
+    group_labels=["Alternative Distribution"],
+    show_hist=False,
+    show_rug=False,
+)
+fig.update_layout(xaxis_tickformat=".1%", showlegend=False)
+fig.add_trace(
+    go.Scatter(
+        hoverinfo="skip",
+        # name="μ",
+        name="avg",
+        x=[np.mean(alt_simulations)],
+        y=[0.000],
+        mode="markers",
+        marker_symbol="circle",
+        showlegend=False,
+        marker=dict(
+            color="green",
+            size=20,
+            line=dict(color="black", width=3),
+        ),
+    )
+)
+alt_fig = fig
+alt_fig.update_yaxes(showticklabels=False)
+
+alt_fig.update_layout(
+    #title="Difference of Means — Right Tail Shaded (≥ 95th percentile)",
+    xaxis_tickformat=".1%",
+    height = 400,
+    width = 600
+)
+alt_fig.data[0].hoverinfo = "skip"
+alt_fig
+
+```
+<br>
+The _Alternative Distribution_ shows outcomes we expect to see if _Minimum Detectable Effect_ is present.
+The distribution is centered around `{python} f"{control_mean*(index_to_control_planned-1):.2%}"`.
+
+
+## Overlay Curves
+
+```{python}
+#| code-summary: "Simulated Alt Distribution"
+#| eval: true
+#| echo: false
+#| code-fold: true
+
+import plotly.figure_factory as ff
+import plotly.graph_objects as go
+from numpy import mean, interp, concatenate, asarray
+
+# KDE for both distributions
+fig = ff.create_distplot(
+    [null_simulations[:10000], alt_simulations[:10000]],
+    group_labels=["Null Distribution", "Alternative Distribution"],
+    show_hist=False,
+    show_rug=False,
+)
+
+# Explicitly color the KDE density lines
+fig.data[0].line.color = "red"    # null
+fig.data[1].line.color = "green"  # alternative
+
+# === NULL shaded tail (red) ===
+x_null = asarray(fig.data[0].x, dtype=float)
+y_null = asarray(fig.data[0].y, dtype=float)
+mask = x_null >= significance_threshold
+if mask.any():
+    x_tail = x_null[mask]
+    y_tail = y_null[mask]
+    y_thresh = interp(significance_threshold, x_null, y_null)
+
+    poly_x = concatenate(([significance_threshold], x_tail, [x_tail[-1], significance_threshold]))
+    poly_y = concatenate(([y_thresh], y_tail, [0], [0]))
+
+    fig.add_trace(
+        go.Scatter(
+            x=poly_x,
+            y=poly_y,
+            fill="toself",
+            mode="lines",
+            line=dict(width=0),
+            fillcolor="rgba(255,0,0,0.3)",
+            name="Null Tail ≥ 95th",
+            showlegend=False
+        )
+    )
+
+# Null mean marker
+fig.add_trace(
+    go.Scatter(
+        x=[mean(null_simulations)],
+        y=[0],
+        mode="markers",
+        marker_symbol="circle",
+        marker=dict(color="red", size=15, line=dict(color="black", width=2)),
+        name="Null Mean",
+        hoverinfo="skip",
+        showlegend=False
+    )
+)
+
+# === ALT shaded tail (green) ===
+x_alt = asarray(fig.data[1].x, dtype=float)
+y_alt = asarray(fig.data[1].y, dtype=float)
+mask = x_alt >= significance_threshold
+if mask.any():
+    x_tail = x_alt[mask]
+    y_tail = y_alt[mask]
+    y_thresh = interp(significance_threshold, x_alt, y_alt)
+
+    poly_x = concatenate(([significance_threshold], x_tail, [x_tail[-1], significance_threshold]))
+    poly_y = concatenate(([y_thresh], y_tail, [0], [0]))
+
+    fig.add_trace(
+        go.Scatter(
+            x=poly_x,
+            y=poly_y,
+            fill="toself",
+            mode="lines",
+            line=dict(width=0),
+            fillcolor="rgba(0,128,0,0.3)",
+            name="Alt Tail ≥ 95th",
+            showlegend=False
+        )
+    )
+
+# Alt mean marker
+fig.add_trace(
+    go.Scatter(
+        x=[mean(alt_simulations)],
+        y=[0],
+        mode="markers",
+        marker_symbol="circle",
+        marker=dict(color="green", size=15, line=dict(color="black", width=2)),
+        name="Alt Mean",
+        hoverinfo="skip",
+        showlegend=False
+    )
+)
+
+# Shared significance line
+fig.add_vline(
+    x=significance_threshold,
+    line_dash="dash",
+    line_color="black",
+    annotation_text=f"threshold = {significance_threshold:.2%}",
+    annotation_position="top right"
+)
+
+# Layout
+fig.update_layout(
+    #title="Null vs Alternative Distributions with Right-Tail Shading",
+    xaxis_tickformat=".1%",
+    showlegend=False,
+    height = 300,
+    title = f"Statistical Power = { (np.mean(np.where(alt_simulations > significance_threshold , 1 , 0))):.1%}"
+)
+
+fig.show()
+
+
+```
+
+<br>Statistical Power is the share of our _Alternative_ that surpasses the **Significance Threshold**.
