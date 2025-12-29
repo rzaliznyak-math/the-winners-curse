@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Russ Zaliznyak <rzaliznyak@gmail.com>">
-<meta name="dcterms.date" content="2025-11-01">
+<meta name="dcterms.date" content="2025-12-01">
 
 <title>The Winner’s Curse</title>
 <style>
@@ -21,6 +21,40 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -49,8 +83,16 @@ ul.task-list li input[type="checkbox"] {
    
   <ul>
   <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#ab-test-setup" id="toc-ab-test-setup" class="nav-link" data-scroll-target="#ab-test-setup">AB Test Setup</a>
+  <ul class="collapse">
+  <li><a href="#baseline" id="toc-baseline" class="nav-link" data-scroll-target="#baseline">Baseline</a></li>
+  <li><a href="#significance-threshold" id="toc-significance-threshold" class="nav-link" data-scroll-target="#significance-threshold">Significance Threshold</a></li>
+  <li><a href="#minimum-detectable-effect" id="toc-minimum-detectable-effect" class="nav-link" data-scroll-target="#minimum-detectable-effect">Minimum Detectable Effect</a></li>
+  <li><a href="#statistical-power" id="toc-statistical-power" class="nav-link" data-scroll-target="#statistical-power">Statistical Power</a></li>
+  <li><a href="#required-samples" id="toc-required-samples" class="nav-link" data-scroll-target="#required-samples">Required Samples</a></li>
+  </ul></li>
   </ul>
-<div class="quarto-alternate-formats"><h2>Other Formats</h2><ul><li><a href="index.pdf"><i class="bi bi-file-pdf"></i>PDF</a></li></ul></div></nav>
+</nav>
 </div>
 <main class="content" id="quarto-document-content">
 
@@ -74,7 +116,7 @@ ul.task-list li input[type="checkbox"] {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">November 1, 2025</p>
+      <p class="date">December 1, 2025</p>
     </div>
   </div>
   
@@ -88,8 +130,107 @@ ul.task-list li input[type="checkbox"] {
 
 <section id="introduction" class="level1">
 <h1>Introduction</h1>
-<p>In February 2025 I shared <a href="https://rzaliznyak-math.github.io/numpy-random-p-value-power/" target="_blank"><strong>Experiment Design &amp; Analysis with NumPy Random</strong></a>. The goal was to give the reader the ability to use simulations to better understand how experiments are designed.</p>
-<p>In this paper we will double click into this topic to learn why <em>Significance Testing is Not an Endorsement of the Treatment Effect</em>.</p>
+<p>You did everything correctly with your AB Test — determined your required sample size in advance, collected all of your samples, and calculated a p-value = 0.005 at the end of your experiment.</p>
+<p>Even with such a low p-value, <em>Significance Testing</em> is not an endorsement of the observed treatment effect! Using simulations below, I’ll explain why this is always the case.</p>
+</section>
+<section id="ab-test-setup" class="level1">
+<h1>AB Test Setup</h1>
+<p>Let’s design a properly-powered <em>Significance Test</em>.</p>
+<section id="baseline" class="level2">
+<h2 class="anchored" data-anchor-id="baseline">Baseline</h2>
+<p>Let’s assume our baseline metric floats around 65%.</p>
+<div id="d7d5496c" class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>control_mean <span class="op">=</span> <span class="fl">0.65</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="significance-threshold" class="level2">
+<h2 class="anchored" data-anchor-id="significance-threshold">Significance Threshold</h2>
+<p>We use a traditional <em>Significance Threshold</em> of 0.05. If our test conditions are equal, 5% of the time we will accidentally and falsely detect a signal.</p>
+<div id="40f83ebd" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>alpha <span class="op">=</span> <span class="fl">0.05</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="minimum-detectable-effect" class="level2">
+<h2 class="anchored" data-anchor-id="minimum-detectable-effect">Minimum Detectable Effect</h2>
+<p>We set a <em>Minimum Detectable Effect</em> = 101. Our Significance Test will be designed to reliably detect a difference — assuming this <em>MDE</em> is actually present in our treatment condition.</p>
+<div id="07abf567" class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>mde <span class="op">=</span> <span class="dv">101</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>index_to_control_planned <span class="op">=</span> mde <span class="op">/</span> <span class="dv">100</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="statistical-power" class="level2">
+<h2 class="anchored" data-anchor-id="statistical-power">Statistical Power</h2>
+<p>We use a traditional <em>Statistical Power</em> of 0.80. If our <em>MDE</em> is true, our experiment has an 80% chance of detecting statistical significance.</p>
+<div id="acd306ff" class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>power <span class="op">=</span> <span class="fl">0.80</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="required-samples" class="level2">
+<h2 class="anchored" data-anchor-id="required-samples">Required Samples</h2>
+<div id="9f43c828" class="cell" data-execution_count="5">
+<details class="code-fold">
+<summary><b>How to Calculate Required Samples</b></summary>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> math <span class="im">import</span> ceil, sqrt</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.stats <span class="im">import</span> norm</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> two_proportion_required_samples(</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    alpha,</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    power,</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    control_rate,</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    treatment_rate,</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    control_to_treatment_ratio<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    tail_type<span class="op">=</span><span class="st">"one_tail"</span>,</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>):</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Calculate the required number of samples for two-proportion test.</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="co">    :param float alpha: Value in (0,1) that specifies desired False Positive Rate</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="co">    :param float power: Value in (0,1) that specifies desired 1 - False Negative Rate</span></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="co">    :param float control_rate: Value in (0,1) that specifies expected control rate</span></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a><span class="co">    :param float treatment_rate: Value in (0,1) that specifies expected treatment rate</span></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a><span class="co">    :param float control_to_treatment_ratio: The ratio of control to treatment samples</span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a><span class="co">    :param string tail_type: Specifies one-tail or two-tail experiment</span><span class="ch">\n</span></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a><span class="co">        Defaults to "two_tail" if anything other than "one_tail" is given</span></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a><span class="co">    :return: prob_tuple: Tuple of required control samples and treatment samples</span></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a><span class="co">    :rtype: tuple</span></span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a><span class="co">    """</span></span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>    alpha_adjusted <span class="op">=</span> (</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>        alpha <span class="cf">if</span> tail_type <span class="kw">is</span> <span class="va">None</span> <span class="kw">or</span> tail_type.lower() <span class="op">==</span> <span class="st">"one_tail"</span> <span class="cf">else</span> alpha <span class="op">/</span> <span class="dv">2</span></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>    beta <span class="op">=</span> <span class="dv">1</span> <span class="op">-</span> power</span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>    <span class="co">##Determine how extreme z-score must be to reach statistically significant result</span></span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>    z_stat_critical <span class="op">=</span> norm.ppf(<span class="dv">1</span> <span class="op">-</span> alpha_adjusted)</span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>    <span class="co">##Determine z-score of Treatment - Control that corresponds to a True Positive Rate (1-beta)</span></span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>    z_power_critical <span class="op">=</span> norm.ppf(beta)</span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>    <span class="co">##Expected Difference between treatment and control</span></span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>    expected_delta <span class="op">=</span> treatment_rate <span class="op">-</span> control_rate</span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>    <span class="co">##Control Allocation Rate</span></span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>    control_allocation <span class="op">=</span> control_to_treatment_ratio <span class="op">/</span> (control_to_treatment_ratio <span class="op">+</span> <span class="dv">1</span>)</span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>    <span class="co">##Treatment Allocation Rate</span></span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>    treatment_allocation <span class="op">=</span> <span class="dv">1</span> <span class="op">-</span> control_allocation</span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a>    <span class="co">##Calculate Variance of Treatment Rate - Control Rate</span></span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a>    blended_p <span class="op">=</span> (</span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a>        treatment_rate <span class="op">*</span> treatment_allocation <span class="op">+</span> control_rate <span class="op">*</span> control_allocation</span>
+<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a>    blended_q <span class="op">=</span> <span class="dv">1</span> <span class="op">-</span> blended_p</span>
+<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a>    variance_blended <span class="op">=</span> (</span>
+<span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a>        blended_p <span class="op">*</span> blended_q <span class="op">/</span> (control_allocation <span class="op">*</span> treatment_allocation)</span>
+<span id="cb5-47"><a href="#cb5-47" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb5-48"><a href="#cb5-48" aria-hidden="true" tabindex="-1"></a>    <span class="co">##Total Samples Required</span></span>
+<span id="cb5-49"><a href="#cb5-49" aria-hidden="true" tabindex="-1"></a>    total_samples_required <span class="op">=</span> (</span>
+<span id="cb5-50"><a href="#cb5-50" aria-hidden="true" tabindex="-1"></a>        variance_blended</span>
+<span id="cb5-51"><a href="#cb5-51" aria-hidden="true" tabindex="-1"></a>        <span class="op">*</span> ((z_power_critical <span class="op">-</span> z_stat_critical) <span class="op">/</span> (<span class="dv">0</span> <span class="op">-</span> expected_delta)) <span class="op">**</span> <span class="dv">2</span></span>
+<span id="cb5-52"><a href="#cb5-52" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb5-53"><a href="#cb5-53" aria-hidden="true" tabindex="-1"></a>    <span class="co">##Split total samples into control and treatment</span></span>
+<span id="cb5-54"><a href="#cb5-54" aria-hidden="true" tabindex="-1"></a>    control_samples <span class="op">=</span> ceil(control_allocation <span class="op">*</span> total_samples_required)</span>
+<span id="cb5-55"><a href="#cb5-55" aria-hidden="true" tabindex="-1"></a>    treatment_samples <span class="op">=</span> ceil(treatment_allocation <span class="op">*</span> total_samples_required)</span>
+<span id="cb5-56"><a href="#cb5-56" aria-hidden="true" tabindex="-1"></a>    <span class="co">##Perhaps return required_delta in the future</span></span>
+<span id="cb5-57"><a href="#cb5-57" aria-hidden="true" tabindex="-1"></a>    required_delta <span class="op">=</span> z_stat_critical <span class="op">*</span> sqrt(variance_blended) <span class="op">+</span> <span class="dv">0</span></span>
+<span id="cb5-58"><a href="#cb5-58" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> (control_samples, treatment_samples)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+</section>
 </section>
 
 </main>
