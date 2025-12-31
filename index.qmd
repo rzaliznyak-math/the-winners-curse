@@ -603,3 +603,9 @@ $$
 
 This closely matches our simulation results, where `{python} f"{pr_over_estimate_statssig:.1%}"` of statistically
 significant experiments overestimated the true effect.
+
+## Increase Power
+
+## Use Priors
+
+# Conclusion
