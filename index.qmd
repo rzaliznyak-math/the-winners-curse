@@ -196,6 +196,14 @@ Total: `{python} f"{control_required_samples+treatment_required_samples:,}"`
 ```{python}
 #| echo: false
 #| code-fold: false
+```
+
+
+```{python}
+#| code-summary: "<b>Plot Null</b>"
+#| echo: true
+#| code-fold: true
+
 import numpy as np
 import plotly.graph_objects as go
 from numpy.random import binomial, seed
@@ -228,13 +236,7 @@ null_simulations = (
 
 
 significance_threshold = np.percentile(null_simulations, 95)
-```
 
-
-```{python}
-#| code-summary: "<b>Plot Null</b>"
-#| echo: true
-#| code-fold: true
 fig = ff.create_distplot(
     [null_simulations[:10000]],
     group_labels=["Null Distribution"],
@@ -326,8 +328,6 @@ Anything that falls beyond `{python} f"{np.percentile(null_simulations,95):.2%}"
 #| code-summary: "<b>Plot Alternative</b>"
 #| echo: true
 #| code-fold: true
-from numpy.random import binomial, seed
-
 control_simulation_samples = (
     binomial(
         control_required_samples,
@@ -532,16 +532,16 @@ fig.show()
 
 # Winner's Curse
 
-Our experiment hit *Statistical Significance*. We no longer look at all experiments, just those that crossed the significance threshold. How accurate is the observed index-to-control likely to be?
+## Analyze Simulations
 
-
-Among statistically significant experiments, we ask:
+> Among simulated experiments that are _statistically significant_, what fraction of observed effects exceed the true effect?
 
 $$
 \Pr\!\left(\widehat{\Delta} > \Delta_{\text{true}} \mid \text{Statistical Significance}\right)
 $$
 
-> What share of _alternative distribution_ fell above the _stats sig_ threshold and of those, what share of experiments had averages higher than the true effect?
+where $\widehat{\Delta}$ denotes the observed index-to-control from the experiment,
+and $\Delta_{\text{true}}$ denotes the true underlying effect.
 
 
 
@@ -606,6 +606,56 @@ significant experiments overestimated the true effect.
 
 ## Increase Power
 
+```{python}
+import plotly.express as px
+import numpy as np
+
+# Create an array of rho values, avoiding -1 and 1
+rho = np.linspace(-0.925, 0.925, 1000)
+
+# Calculate f(rho)
+f_rho = 1/ (1 - rho**2)
+
+# Create the plot
+fig = px.line(x=rho, y=f_rho, 
+              #title="S(ρ) = ρ²",
+              labels={'x': 'ρ', 'y': 'times_faster(ρ)'},
+              template="plotly_white")
+
+# Update layout for better visualization
+fig.update_layout(
+    xaxis_range=[-.99, .99],
+    #yaxis_range=[0, 1],
+    xaxis_tickformat='.2f',
+    yaxis_tickformat='.1f',
+  xaxis_tickfont=dict(size=14),
+  yaxis_tickfont=dict(size=14),
+    height=300,
+    width=400,
+    hoverlabel=dict(
+        font_size=18,  # Increase hover text size
+        font_family="Arial"  # Set font family for hover text
+    )
+)
+fig.update_xaxes(tickvals = [-0.85,-0.5,0,0.5,0.85])
+
+# Add vertical asymptotes
+fig.add_vline(x=-1, line_dash="dash", line_color="red", annotation_text="ρ = -1", annotation_position="top left")
+fig.add_vline(x=1, line_dash="dash", line_color="red", annotation_text="ρ = 1", annotation_position="top right")
+
+# Show the plot
+fig.show()
+
+```
+
 ## Use Priors
 
 # Conclusion
+
+Statistical significance selects for extreme outcomes.
+
+Conditioning on statistical significance selects only experiments whose observed effects crossed the significance threshold. This creates an upward bias in observed effect sizes — **The Winner’s Curse**.
+
+Even with a properly designed experiment at 80% power, a statistically significant result is more likely to overestimate than underestimate the true index-to-control --- 62.5% of the time.
+
+Statistical significance provides evidence that an effect exists, not that the observed effect size is accurate.
