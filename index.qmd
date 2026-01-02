@@ -606,28 +606,30 @@ significant experiments overestimated the true effect.
 
 ## Increase Power
 
+You can increase your statistical power to reduce the chance of effect size inflation. But the problem never truly vanishes.
+
 ```{python}
 import plotly.express as px
 import numpy as np
 
 # Create an array of rho values, avoiding -1 and 1
-rho = np.linspace(-0.925, 0.925, 1000)
+rho = np.linspace(0.001, 0.999, 500)
 
 # Calculate f(rho)
-f_rho = 1/ (1 - rho**2)
+f_rho = 0.5/ np.maximum(rho,0.5)
 
 # Create the plot
 fig = px.line(x=rho, y=f_rho, 
               #title="S(ρ) = ρ²",
-              labels={'x': 'ρ', 'y': 'times_faster(ρ)'},
+              labels={'x': 'power', 'y': 'prct_over_estimate'},
               template="plotly_white")
 
 # Update layout for better visualization
 fig.update_layout(
-    xaxis_range=[-.99, .99],
+    xaxis_range=[0,1],
     #yaxis_range=[0, 1],
-    xaxis_tickformat='.2f',
-    yaxis_tickformat='.1f',
+    xaxis_tickformat='.1%',
+    yaxis_tickformat='.1%',
   xaxis_tickfont=dict(size=14),
   yaxis_tickfont=dict(size=14),
     height=300,
@@ -637,16 +639,22 @@ fig.update_layout(
         font_family="Arial"  # Set font family for hover text
     )
 )
-fig.update_xaxes(tickvals = [-0.85,-0.5,0,0.5,0.85])
+fig.update_xaxes(tickvals = [0,0.25,0.5,0.75,1])
 
 # Add vertical asymptotes
-fig.add_vline(x=-1, line_dash="dash", line_color="red", annotation_text="ρ = -1", annotation_position="top left")
-fig.add_vline(x=1, line_dash="dash", line_color="red", annotation_text="ρ = 1", annotation_position="top right")
+#fig.add_vline(x=-1, line_dash="dash", line_color="red", annotation_text="ρ = -1", annotation_position="top left")
+#fig.add_vline(x=1, line_dash="dash", line_color="red", annotation_text="ρ = 1", annotation_position="top right")
 
 # Show the plot
 fig.show()
 
 ```
+<br>
+
+- Until an experiment reaches 50% power, statistically significant results are guaranteed to overestimate the true effect.
+
+- Even as power increases toward 100%, the chance of overestimating the true effect never falls below 50%.
+
 
 ## Use Priors
 
