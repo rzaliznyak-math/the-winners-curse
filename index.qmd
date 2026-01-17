@@ -2,7 +2,7 @@
 title: "The Winner's Curse"
 subtitle: "Significance Testing is Not an Endorsement of the Treatment Effect"
 author: "Russ Zaliznyak <[rzaliznyak@gmail.com](mailto:rzaliznyak@gmail.com)>"
-date: "2025-12-29"
+date: "2026-01-16"
 execute:
   echo: false
 format: 
@@ -17,10 +17,8 @@ format:
 
 You did everything correctly with your AB Test --- determined your required sample size in advance, collected all of your samples, and calculated a p-value < 0.01 at the end of your experiment.
 
-Even with such a low p-value, _Significance Testing_ is not an endorsement of the observed treatment effect! Using simulations below, I'll explain why this is always the case.
-
-
-
+But _Significance Testing_ is not an endorsement of the observed treatment effect  --- even with a low p-value! 
+Walk through the below `numpy.random` enabled simulations or repeat on your own to see why this is the case.
 
 # AB Test Setup
 
@@ -45,7 +43,8 @@ alpha = 0.05
 
 
 ## Minimum Detectable Effect
-We set a _Minimum Detectable Effect_ = 101. Our Significance Test will be designed to reliably detect a difference --- assuming this _MDE_ is actually present in our treatment condition.
+We set MDE = 101 (index-to-control), representing a +1% relative lift, a typical effect size that product experiments in industry are powered to detect.
+
 
 ```{python}
 #| echo: true
@@ -55,6 +54,7 @@ index_to_control_planned = mde / 100
 delta_to_control_planned = control_mean*index_to_control_planned - control_mean
 ```
 
+> **Note**: An MDE (index-to-control) of 101 corresponds to a +1% relative change --- in this case going from 65% to 65.65% --- a delta-to-control of 0.65%.
 
 
 ## Statistical Power
@@ -209,7 +209,7 @@ import plotly.graph_objects as go
 from numpy.random import binomial, seed
 import plotly.figure_factory as ff
 
-seed(5)
+seed(10)
 NUMBER_SIMULATIONS = int(2e6)
 
 control_simulation_samples_0 = (
@@ -301,7 +301,7 @@ fig.add_vline(
     x=significance_threshold,
     line_dash="dash",
     line_color="red",
-    annotation_text=f"Threshold = {significance_threshold:.2%}",
+    annotation_text=f"{100*(1-alpha):.0f}th %ile Threshold = {significance_threshold:.2%}",
     annotation_position="top right",
 )
 
@@ -319,8 +319,8 @@ null_fig = fig
 
 ```
 <br>
-The _Null Distribution_ shows possible outcomes we expect to see if _Control_ and _Treatment_ are identical.
-Anything that falls beyond `{python} f"{np.percentile(null_simulations,95):.2%}"` will be deemed _Statistically Significant_.
+The _Null Distribution_ shows outcomes we expect to see if Control and Treatment are identical.
+Anything that falls beyond the _95th percentile_  at `{python} f"{np.percentile(null_simulations,95):.2%}"` is deemed _Statistically Significant_ with a _false positive_ rate of `{python} f"{alpha:.0%}"`.
 
 ## Alternative Distribution
 
@@ -394,7 +394,7 @@ alt_fig
 ```
 <br>
 The _Alternative Distribution_ shows outcomes we expect to see if _Minimum Detectable Effect_ is present.
-The distribution is centered around `{python} f"{control_mean*(index_to_control_planned-1):.2%}"`.
+The distribution is centered around `{python} f"{control_mean*(index_to_control_planned-1):.2%}"` since we set `MDE = 101`.
 
 
 ## Overlay Curves
@@ -534,14 +534,16 @@ fig.show()
 
 ## Analyze Simulations
 
-> Among simulated experiments that are _statistically significant_, what fraction of observed effects exceed the true effect?
+> Among simulated experiments from our _Alternative Distribution_ that are `statistically significant`, what fraction of observed effects exceed the true effect (dtc) that was encoded into the simulations?
+
+Let $\widehat{\Delta}$ denote the observed delta-to-control in our experiment
+and $\Delta_{\text{true}}$ denote the true delta-to-control.
+
 
 $$
 \Pr\!\left(\widehat{\Delta} > \Delta_{\text{true}} \mid \text{Statistical Significance}\right)
 $$
 
-where $\widehat{\Delta}$ denotes the observed index-to-control from the experiment,
-and $\Delta_{\text{true}}$ denotes the true underlying effect.
 
 
 
@@ -560,7 +562,7 @@ pr_over_estimate_statssig = np.mean(over_true_effect[stats_sig])
 
 ```
 
-- `{python} f"{pr_over_estimate_statssig:.1%}"` of our simulated experiments that reached _Stats Sig_ overestimated the true effect we programmed into our simulations.
+- `{python} f"{pr_over_estimate_statssig:.1%}"` of our simulated experiments that reached _Stats Sig_ overestimated the true delta-to-control we programmed into our simulations.
 
 ## Rule of Thumb
 
@@ -572,13 +574,13 @@ $$
 This probability can be understood by separating its two components:
 
 - Because the alternative distribution of the estimator is centered at the true
-  effect, the observed effect is equally likely to fall above or below the true
+  delta-to-control, the observed delta-to-control is equally likely to fall above or below the true
   effect:
   $$
   \Pr(\widehat{\Delta} > \Delta_{\text{true}}) = 0.5
   $$
 
-- Because the true effect is present, the probability that the experiment reaches
+- Because the true effect (delta-to-control = 0.65%) is present, the probability that the experiment reaches
   statistical significance is equal to the experiment’s statistical power:
   $$
   \Pr(\text{Statistical Significance} \mid \Delta_{\text{true}}) = \text{Power}
@@ -602,11 +604,15 @@ $$
 
 
 This closely matches our simulation results, where `{python} f"{pr_over_estimate_statssig:.1%}"` of statistically
-significant experiments overestimated the true effect.
+significant experiments overestimated the true effect --- delta-to-control = 0.65%.
 
-## Increase Power
+# What To Do
 
-You can increase your statistical power to reduce the chance of effect size inflation. But the problem never truly vanishes.
+Effect size inflation is unavoidable in low and moderate powered experiments. Practitioners have two options: increase statistical power to reduce the magnitude of the bias, or use priors to produce more stable effect size estimates across repeated experiments.
+
+## Increase Statistical Power
+
+You can increase your statistical power to reduce the chance of effect size inflation. But the problem of over-estimates never truly vanishes.
 
 ```{python}
 import plotly.express as px
@@ -621,7 +627,7 @@ f_rho = 0.5/ np.maximum(rho,0.5)
 # Create the plot
 fig = px.line(x=rho, y=f_rho, 
               #title="S(ρ) = ρ²",
-              labels={'x': 'power', 'y': 'prct_over_estimate'},
+              labels={'x': 'power', 'y': 'Share of Overestimates'},
               template="plotly_white")
 
 # Update layout for better visualization
@@ -653,17 +659,311 @@ fig.show()
 
 - Until an experiment reaches 50% power, statistically significant results are guaranteed to overestimate the true effect.
 
-- Even as power increases toward 100%, the chance of overestimating the true effect never falls below 50%.
+- The share of overestimates reaches its minimum of 50% at 100% power.
 
 
 ## Use Priors
 
+If you want good long-run effect size estimates, priors are required.
+
+Observed results are weighed against the historical prior using precision-weighted averaging, with more confident (lower-variance) inputs exerting greater influence.
+
+```{python}
+#| code-summary: "<b>Method to Regularize Priors</b>"
+#| echo: true
+#| code-fold: true
+
+import numpy as np
+
+
+def combine_prior_and_likelihood(
+    prior_mean,
+    prior_se,
+    likelihood_mean,
+    likelihood_se,
+):
+    """
+    Combines a normal prior and a normal likelihood into a normal posterior
+    using precision-weighted averaging.
+
+    All inputs may be scalars or NumPy arrays (broadcastable to the same shape).
+    """
+    prior_mean = np.asarray(prior_mean)
+    prior_se = np.asarray(prior_se)
+    likelihood_mean = np.asarray(likelihood_mean)
+    likelihood_se = np.asarray(likelihood_se)
+
+    posterior_variance = 1 / (
+        1 / prior_se**2 + 1 / likelihood_se**2
+    )
+    posterior_mean = posterior_variance * (
+        prior_mean / prior_se**2
+        + likelihood_mean / likelihood_se**2
+    )
+    posterior_se = np.sqrt(posterior_variance)
+
+    return posterior_mean, posterior_se
+
+
+```
+
+
+### Example
+
+Below are simulated experiment data where the `true` control and treatment conversion rate are hard-coded --- 65% for `Control` and 66% for `Treatment`.
+
+```{python}
+#| echo: true
+#| code-fold: true
+import numpy as np
+import pandas as pd
+from IPython.display import display
+from scipy import stats
+
+
+intuit_blue = "#0177c9"
+intuit_red = "#bd0707"
+TRIALS = int(5e4)
+
+np.random.seed(211)
+
+CONTROL_RATE = 0.65
+TREATMENT_RATE = 0.66
+df_agg = (
+    pd.DataFrame(
+        {
+            "A": np.random.binomial(
+                TRIALS, CONTROL_RATE, 1
+            ),
+            "B": np.random.binomial(
+                TRIALS, TREATMENT_RATE, 1
+            ),
+        }
+    )
+    .melt(
+        var_name="recipe", value_name="Conversions"
+    )
+    .assign(
+        trials=TRIALS,
+        rate=lambda x: x["Conversions"]
+        / x["trials"],
+    )
+)
+
+
+df_agg["Rate"] = [
+    "{:.2%}".format(c) for c in df_agg["rate"]
+]
+df_agg["Trials"] = [
+    "{:,d}".format(int(c))
+    for c in df_agg["trials"]
+]
+df_agg["Conversions"] = [
+    "{:,d}".format(int(c))
+    for c in df_agg["Conversions"]
+]
+
+
+control_rate = df_agg.iloc[0]["rate"]
+treatment_rate = df_agg.iloc[1]["rate"]
+delta = treatment_rate - control_rate
+n_c = float(df_agg.iloc[0]["trials"])
+n_t = float(df_agg.iloc[1]["trials"])
+index_to_control = float(treatment_rate) / float(
+    control_rate
+)
+delta_to_control = float(treatment_rate) - float(
+    control_rate
+)
+delta_to_control_string = "{:.2%}".format(
+    delta_to_control
+)
+se_delta = np.sqrt(
+    control_rate * (1 - control_rate) / n_c
+    + treatment_rate * (1 - treatment_rate) / n_t
+)
+
+# z-score
+z = delta / se_delta
+
+p_value = stats.norm.sf(np.abs(z))
+
+
+```
+
+
+```{python}
+#fig.show("png")
+display(df_agg.set_index("recipe")[[ "Trials","Conversions", "Rate"]])
+
+```
+
+<br>
+In this simulation, `Control` underpeformed and `Treatment` outperformed their true averages; causing an inflated estimate of `{python} f"{delta_to_control_string}"` and p-value = `{python} f"{p_value:.15f}"`.
+
+### Regularization
+
+```{python}
+#| code-summary: "plotting function code"
+#| echo: true
+#| code-fold: true
+import numpy as np
+import plotly.graph_objects as go
+from scipy.stats import norm
+
+
+def plot_distributions_cdf_only(
+    prior_mean,
+    prior_se,
+    like_mean,
+    like_se,
+    post_mean,
+    post_se,
+    metric_name,
+    num_points=400,
+):
+    # Build x-range
+    all_means = np.array(
+        [prior_mean, like_mean, post_mean]
+    )
+    all_ses = np.array(
+        [prior_se, like_se, post_se]
+    )
+    xmin = all_means.min() - 4 * all_ses.max()
+    xmax = all_means.max() + 4 * all_ses.max()
+    x = np.linspace(xmin, xmax, num_points)
+
+    # Compute CDFs
+    prior_cdf = norm.cdf(x, prior_mean, prior_se)
+    like_cdf = norm.cdf(x, like_mean, like_se)
+    post_cdf = norm.cdf(x, post_mean, post_se)
+
+    # Compute PDFs (for plotting)
+    prior_pdf = norm.pdf(x, prior_mean, prior_se)
+    like_pdf = norm.pdf(x, like_mean, like_se)
+    post_pdf = norm.pdf(x, post_mean, post_se)
+
+    fig = go.Figure()
+
+    # Posterior (blue shaded — updated)
+    fig.add_trace(
+        go.Scatter(
+            x=x,
+            y=post_pdf,
+            mode="lines",
+            line=dict(
+                color="#0B3C5D", width=3
+            ),  # navy outline
+            fill="tozeroy",
+            fillcolor="rgba(25, 100, 160, 0.35)",  # <-- UPDATED vibrant blue fill
+            name="Posterior",
+            customdata=post_cdf,
+            hovertemplate="<b>Posterior</b><br>x = %{x:.2%}<br>P(X < x) = %{customdata:.2%}<br>",
+        )
+    )
+
+    # Observed (orange)
+    fig.add_trace(
+        go.Scatter(
+            x=x,
+            y=like_pdf,
+            mode="lines",
+            line=dict(color="#E38B29", width=2),
+            name="Observed",
+            customdata=like_cdf,
+            hovertemplate="<b>Observed</b><br>x = %{x:.2%}<br>P(X < x) = %{customdata:.2%}<br>",
+        )
+    )
+
+    # Prior (dashed gray)
+    fig.add_trace(
+        go.Scatter(
+            x=x,
+            y=prior_pdf,
+            mode="lines",
+            line=dict(
+                color="#676767",
+                dash="dash",
+                width=2,
+            ),
+            name="Prior",
+            customdata=prior_cdf,
+            hovertemplate="<b>Prior</b><br>x = %{x:.2%}<br>P(X < x) = %{customdata:.2%}<br>",
+        )
+    )
+
+    # Vertical "No Change" line (deep red)
+    fig.add_shape(
+        type="line",
+        x0=0,
+        x1=0,
+        y0=0,
+        y1=max(post_pdf) * 1.1,
+        line=dict(color="black", width=3),
+    )
+
+    fig.add_annotation(
+        x=0,
+        y=max(post_pdf) * 1.15,
+        text="No Change",
+        showarrow=False,
+        font=dict(size=16),
+    )
+
+    fig.update_layout(
+        title=f"{metric_name}",
+        xaxis=dict(
+            title="Rate",
+            tickformat=".2%",
+            showgrid=True,
+        ),
+        yaxis=dict(
+            showticklabels=False, showgrid=False
+        ),
+        template="simple_white",
+        hovermode="closest",
+    )
+
+    fig.show()
+
+```
+
+
+```{python}
+#| code-summary: "Plot Output"
+#| echo: true
+#| code-fold: true
+prior_mean = 0
+prior_se = 0.0025
+(
+    posterior_mean,
+    posterior_se,
+) = combine_prior_and_likelihood(
+    prior_mean, prior_se, delta, se_delta
+)
+
+plot_distributions_cdf_only(
+    prior_mean=prior_mean,
+    prior_se=prior_se,
+    like_mean=delta,
+    like_se=se_delta,
+    post_mean=posterior_mean,
+    post_se=posterior_se,
+    metric_name="Conversions",
+)
+
+```
+
+Before you looked at the current data, you already had beliefs — based on experience, past experiments, or domain expertise. That’s your prior.
+
+But you’ve collected new data — this is the observed result. Your brain combines what you previously believed (the prior) with what you just learned (the observed data) to produce a new estimate: the posterior.
+
+Your point of view evolves with new evidence and your estimate shifts as new data tells a stronger or different story.
+
 # Conclusion
 
-Statistical significance selects for extreme outcomes.
+Statistical significance conditions on extreme results, selecting only experiments whose observed effects cross the significance threshold and are thus biased to overestimate effect sizes — **the Winner’s Curse**.
 
-Conditioning on statistical significance selects only experiments whose observed effects crossed the significance threshold. This creates an upward bias in observed effect sizes — **The Winner’s Curse**.
+We showed that even in a properly designed experiment with 80% statistical power, a statistically significant result is more likely to overestimate than underestimate the true index-to-control — 62.5% of the time.
 
-Even with a properly designed experiment at 80% power, a statistically significant result is more likely to overestimate than underestimate the true index-to-control --- 62.5% of the time.
-
-Statistical significance provides evidence that an effect exists, not that the observed effect size is accurate.
+**In short**: statistical significance provides evidence that an effect exists, not that the observed effect size is accurate.
