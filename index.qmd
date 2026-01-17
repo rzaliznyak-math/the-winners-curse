@@ -59,7 +59,7 @@ delta_to_control_planned = control_mean*index_to_control_planned - control_mean
 
 
 ## Statistical Power
-We use a traditional _Statistical Power_ of 0.80. If our _MDE_ is true, our experiment has an 80% chance of detecting statistical significance. Our False Negative risk is 20% _(Type II error)_.
+Use a traditional _Statistical Power_ of 0.80. If our _MDE_ is true, our experiment has an 80% chance of detecting statistical significance. Our False Negative risk is 20% _(Type II error)_.
 
 ```{python}
 #| echo: true
