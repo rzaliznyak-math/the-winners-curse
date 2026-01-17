@@ -2,7 +2,7 @@
 title: "The Winner's Curse"
 subtitle: "Significance Testing is Not an Endorsement of the Treatment Effect"
 author: "Russ Zaliznyak <[rzaliznyak@gmail.com](mailto:rzaliznyak@gmail.com)>"
-date: "2026-01-16"
+date: "2026-01-17"
 execute:
   echo: false
 format: 
@@ -15,17 +15,18 @@ format:
 
 # Introduction
 
-You did everything correctly with your AB Test --- determined your required sample size in advance, collected all of your samples, and calculated a p-value < 0.01 at the end of your experiment.
+This article is written for practitioners who run experiments and rely on statistical significance to make decisions about effect sizes.
 
-But _Significance Testing_ is not an endorsement of the observed treatment effect  --- even with a low p-value! 
-Walk through the below `numpy.random` enabled simulations or repeat on your own to see why this is the case.
+You ran your A/B test properly: you determined your required sample size in advance, collected all of your data, and calculated a p-value < 0.01 at the end of the experiment.
+
+But **statistical significance is not an endorsement of the observed treatment effect** --- even with a low p-value. The `numpy.random` simulations below show why.
 
 # AB Test Setup
 
 Let's design a properly-powered _Significance Test_. 
 
 ## Baseline
-Let's assume our baseline metric floats around 65%.
+Assume our baseline metric floats around 65%.
 
 ```{python}
 #| echo: true
@@ -34,7 +35,7 @@ control_mean = 0.65
 ```
 
 ## Significance Threshold
-We use a traditional _Significance Threshold_ of 0.05. If our test conditions are equal, 5% of the time we will accidentally and falsely detect a signal _(Type I Error)_.
+Use a traditional _Significance Threshold_ of 0.05. If our test conditions are equal, 5% of the time we will accidentally and falsely detect a signal _(Type I Error)_.
 ```{python}
 #| echo: true
 #| code-fold: false
@@ -43,7 +44,7 @@ alpha = 0.05
 
 
 ## Minimum Detectable Effect
-We set MDE = 101 (index-to-control), representing a +1% relative lift, a typical effect size that product experiments in industry are powered to detect.
+Set MDE = 101 (index-to-control), representing a +1% relative lift, a typical effect size that product experiments in industry are powered to detect.
 
 
 ```{python}
@@ -664,12 +665,14 @@ fig.show()
 
 ## Use Priors
 
-If you want good long-run effect size estimates, priors are required.
+If accurate effect size estimates is the goal, using prior information becomes necessary. <br>
 
-Observed results are weighed against the historical prior using precision-weighted averaging, with more confident (lower-variance) inputs exerting greater influence.
+### How It Works
+
+Priors are weighed against observed results using precision-weighted averaging, so noisier experimental estimates are shrunk more aggressively toward historical baselines.
 
 ```{python}
-#| code-summary: "<b>Method to Regularize Priors</b>"
+#| code-summary: "<b>Method to Regularize Estimates</b>"
 #| echo: true
 #| code-fold: true
 
@@ -954,16 +957,12 @@ plot_distributions_cdf_only(
 
 ```
 
-Before you looked at the current data, you already had beliefs — based on experience, past experiments, or domain expertise. That’s your prior.
-
-But you’ve collected new data — this is the observed result. Your brain combines what you previously believed (the prior) with what you just learned (the observed data) to produce a new estimate: the posterior.
-
-Your point of view evolves with new evidence and your estimate shifts as new data tells a stronger or different story.
+The posterior estimate is a precision-weighted average of the prior and the observed experimental result, shrinking noisier estimates more aggressively toward historical baselines.
 
 # Conclusion
 
-Statistical significance conditions on extreme results, selecting only experiments whose observed effects cross the significance threshold and are thus biased to overestimate effect sizes — **the Winner’s Curse**.
+Statistical significance conditions on extreme results, biasing reported effect sizes upward --- **the Winner’s Curse**.
 
-We showed that even in a properly designed experiment with 80% statistical power, a statistically significant result is more likely to overestimate than underestimate the true index-to-control — 62.5% of the time.
+Even in a properly designed experiment with 80% statistical power, a statistically significant result is more likely to overestimate than underestimate the true delta-to-control — 62.5% of the time.
 
 **In short**: statistical significance provides evidence that an effect exists, not that the observed effect size is accurate.
