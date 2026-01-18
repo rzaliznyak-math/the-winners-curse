@@ -19,11 +19,11 @@ This article is written for practitioners who run experiments and rely on statis
 
 You ran your A/B test properly: you determined your required sample size in advance, collected all of your data, and calculated a p-value < 0.01 at the end of the experiment.
 
-But **statistical significance is not an endorsement of the observed treatment effect** --- even with a low p-value. The `numpy.random` simulations below show why.
+But **statistical significance is not an endorsement of the observed treatment effect** --- even with a low p-value. The simulations below show why.
 
 # AB Test Setup
 
-Let's design a properly-powered _Significance Test_. 
+To prove our claim, we start by specifying a conventional, well-powered A/B test.
 
 ## Baseline
 Assume our baseline metric floats around 65%.
@@ -530,6 +530,8 @@ fig.show()
 
 
 ```
+<br>
+With the experimental design fixed, we can now examine how conditioning on statistical significance affects observed effect sizes.
 
 # Winner's Curse
 
@@ -611,7 +613,7 @@ significant experiments overestimated the true effect --- delta-to-control = 0.6
 
 Effect size inflation is unavoidable in low and moderate powered experiments. Practitioners have two options: increase statistical power to reduce the magnitude of the bias, or use priors to produce more stable effect size estimates across repeated experiments.
 
-## Increase Statistical Power
+## Option 1: Increase Power
 
 You can increase your statistical power to reduce the chance of effect size inflation. But the problem of over-estimates never truly vanishes.
 
@@ -663,7 +665,7 @@ fig.show()
 - The share of overestimates reaches its minimum of 50% at 100% power.
 
 
-## Use Priors
+## Option 2: Use Priors
 
 If accurate effect size estimates is the goal, using prior information becomes necessary. <br>
 
@@ -961,7 +963,7 @@ The posterior estimate is a precision-weighted average of the prior and the obse
 
 # Conclusion
 
-Statistical significance conditions on extreme results, biasing reported effect sizes upward --- **the Winner’s Curse**.
+As shown above Statistical significance conditions on extreme results, biasing reported effect sizes upward --- **the Winner’s Curse**.
 
 Even in a properly designed experiment with 80% statistical power, a statistically significant result is more likely to overestimate than underestimate the true delta-to-control — 62.5% of the time.
 
