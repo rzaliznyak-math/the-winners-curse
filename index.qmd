@@ -19,7 +19,8 @@ This article is written for practitioners who run experiments and rely on statis
 
 You ran your A/B test properly: you determined your required sample size in advance, collected all of your data, and calculated a p-value < 0.01 at the end of the experiment.
 
-But **statistical significance is not an endorsement of the observed treatment effect** --- even with a low p-value. The simulations below show why.
+But **statistical significance is not an endorsement of the observed treatment effect**. 
+Below we show why conditioning on statistical significance systematically inflates effect sizes, quantify how often this happens, and outline what to do when accuracy matters.
 
 # AB Test Setup
 
@@ -963,7 +964,7 @@ The posterior estimate is a precision-weighted average of the prior and the obse
 
 # Conclusion
 
-As shown above Statistical significance conditions on extreme results, biasing reported effect sizes upward --- **the Winner’s Curse**.
+As shown above,  statistical significance conditions on extreme results, biasing reported effect sizes upward --- **the Winner’s Curse**.
 
 Even in a properly designed experiment with 80% statistical power, a statistically significant result is more likely to overestimate than underestimate the true delta-to-control — 62.5% of the time.
 
