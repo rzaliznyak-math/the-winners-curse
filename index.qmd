@@ -13,6 +13,8 @@ format:
     toc-indent: 1em
 ---
 
+![](./assets/top.png)
+
 # Introduction
 
 This article is written for practitioners who run experiments and rely on statistical significance to make decisions about effect sizes.
