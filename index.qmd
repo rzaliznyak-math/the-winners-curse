@@ -17,7 +17,7 @@ format:
 
 This article is written for practitioners who run experiments and rely on statistical significance to make decisions about effect sizes.
 
-Statistical significance indicates that control and treatment are unlikely to be equal, not that the observed effect size is an accurate estimate of the true effect.
+Statistical significance can reliably indicate that control and treatment are unlikely to be equal, but not that the observed effect size is an accurate estimate of the true effect.
 
 In other words, **statistical significance is not an endorsement of the observed treatment effect**. 
 Below we show why conditioning on statistical significance systematically inflates effect sizes. We then quantify how often this happens and outline what to do when accuracy matters.
@@ -974,4 +974,4 @@ As shown above,  statistical significance conditions on extreme results, biasing
 
 Even a properly designed experiment with 80% statistical power, a statistically significant result is more likely to overestimate than underestimate the true delta-to-control — 62.5% of the time.
 
-**In short**: Statistical significance tells you that an effect exists, not how large it is — estimating magnitude requires more than hypothesis testing alone.
+**In short**: Statistical significance reliably tells us When an effect exists, not how large it is — estimating magnitude requires more than hypothesis testing alone.
