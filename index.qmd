@@ -2,7 +2,7 @@
 title: "The Winner's Curse"
 subtitle: "Significance Testing is Not an Endorsement of the Treatment Effect"
 author: "Russ Zaliznyak <[rzaliznyak@gmail.com](mailto:rzaliznyak@gmail.com)>"
-date: "2026-01-17"
+date: "2026-01-19"
 execute:
   echo: false
 format: 
@@ -17,10 +17,10 @@ format:
 
 This article is written for practitioners who run experiments and rely on statistical significance to make decisions about effect sizes.
 
-Statistical significance indicates that Control and Treatment are unlikely to be equal, not that the observed effect size is an accurate estimate of the true effect.
+Statistical significance indicates that control and treatment are unlikely to be equal, not that the observed effect size is an accurate estimate of the true effect.
 
 In other words, **statistical significance is not an endorsement of the observed treatment effect**. 
-Below we show why conditioning on statistical significance systematically inflates effect sizes, quantify how often this happens, and outline what to do when accuracy matters.
+Below we show why conditioning on statistical significance systematically inflates effect sizes. We then quantify how often this happens and outline what to do when accuracy matters.
 
 # AB Test Setup
 
@@ -36,7 +36,7 @@ control_mean = 0.65
 ```
 
 ## Significance Threshold
-Use a traditional _Significance Threshold_ of 0.05. If our test conditions are equal, 5% of the time we will accidentally and falsely detect a signal _(Type I Error)_.
+Use a traditional _significance threshold_ of 0.05. If our test conditions are equal, 5% of the time we will accidentally and falsely detect a signal _(Type I Error)_.
 ```{python}
 #| echo: true
 #| code-fold: false
@@ -60,13 +60,15 @@ delta_to_control_planned = control_mean*index_to_control_planned - control_mean
 
 
 ## Statistical Power
-Use a traditional _Statistical Power_ of 0.80. If our _MDE_ is true, our experiment has an 80% chance of detecting statistical significance. Our False Negative risk is 20% _(Type II error)_.
+Use a traditional _statistical power_ of 0.80. If our _MDE_ is true, our experiment has an 80% chance of detecting statistical significance. Our False Negative risk is 20% _(Type II error)_.
 
 ```{python}
 #| echo: true
 #| code-fold: false
 power = 0.80
 ```
+
+These assumptions reflect a textbook, well-powered experiment.
 
 ## Required Samples
 
@@ -109,19 +111,19 @@ def two_proportion_required_samples(
 
     ##Determine how extreme z-score must be to reach statistically significant result
     z_stat_critical = norm.ppf(1 - alpha_adjusted)
-    ##Determine z-score of Treatment - Control that corresponds to a True Positive Rate (1-beta)
+    ##Determine z-score of treatment - control that corresponds to a True Positive Rate (1-beta)
     z_power_critical = norm.ppf(beta)
     ##Expected Difference between treatment and control
     expected_delta = treatment_rate - control_rate
-    ##Control Allocation Rate
+    ##control Allocation Rate
     control_allocation = (
         control_to_treatment_ratio
         / (control_to_treatment_ratio + 1)
     )
-    ##Treatment Allocation Rate
+    ##treatment Allocation Rate
     treatment_allocation = 1 - control_allocation
 
-    ##Calculate Variance of Treatment Rate - Control Rate
+    ##Calculate Variance of treatment Rate - control Rate
     blended_p = (
         treatment_rate * treatment_allocation
         + control_rate * control_allocation
@@ -184,8 +186,8 @@ def two_proportion_required_samples(
 
 ```
 
-Control: `{python} f"{control_required_samples:,}"`<br>
-Treatment: `{python} f"{treatment_required_samples:,}"`<br>
+control: `{python} f"{control_required_samples:,}"`<br>
+treatment: `{python} f"{treatment_required_samples:,}"`<br>
 Total: `{python} f"{control_required_samples+treatment_required_samples:,}"`
 
 
@@ -321,7 +323,7 @@ null_fig = fig
 
 ```
 <br>
-The _Null Distribution_ shows outcomes we expect to see if Control and Treatment are identical.
+The _Null Distribution_ shows outcomes we expect to see if control and treatment are identical.
 Anything that falls beyond the _95th percentile_  at `{python} f"{np.percentile(null_simulations,95):.2%}"` is deemed _Statistically Significant_ with a _false positive_ rate of `{python} f"{alpha:.0%}"`.
 
 ## Alternative Distribution
@@ -402,7 +404,7 @@ The distribution is centered around `{python} f"{control_mean*(index_to_control_
 ## Overlay Curves
 
 
-**Statistical Power** = `{python} f"{observed_power:.1%}"` --- the share of _Alternative Distribution_ that is expected to surpass our _Significance Threshold_.
+**statistical power** = `{python} f"{observed_power:.1%}"` --- the share of _Alternative Distribution_ that is expected to surpass our _significance threshold_.
 
 ```{python}
 #| code-summary: "Simulated Alt Distribution"
@@ -521,7 +523,7 @@ fig.update_layout(
     xaxis_tickformat=".1%",
     showlegend=False,
     height = 300,
-    #title = f"Statistical Power = { (np.mean(np.where(alt_simulations > significance_threshold , 1 , 0))):.1%}"
+    #title = f"statistical power = { (np.mean(np.where(alt_simulations > significance_threshold , 1 , 0))):.1%}"
 )
 fig.update_yaxes(showticklabels=False)
 fig.data[0].hoverinfo = "skip"
@@ -610,6 +612,8 @@ $$
 This closely matches our simulation results, where `{python} f"{pr_over_estimate_statssig:.1%}"` of statistically
 significant experiments overestimated the true effect --- delta-to-control = 0.65%.
 
+The next section considers what this bias implies for practitioners.
+
 # What To Do
 
 Effect size inflation is unavoidable in low-powered experiments. Practitioners have two options: increase statistical power to reduce the magnitude of the bias, or use priors to produce more stable effect size estimates across repeated experiments.
@@ -668,7 +672,7 @@ fig.show()
 
 ## Option 2: Use Priors
 
-If accurate effect size estimates is the goal, using prior information becomes necessary. <br>
+If accurate effect size estimates are the goal, using prior information becomes necessary. <br>
 
 <!--### How It Works-->
 
@@ -716,7 +720,7 @@ def combine_prior_and_likelihood(
 
 ### Example
 
-Below are simulated experiment data where the `true` control and treatment conversion rate are hard-coded --- 65% for `Control` and 66% for `Treatment`.
+Below are simulated experiment data where the `true` control and treatment conversion rate are hard-coded --- 65% for `control` and 66% for `treatment`.
 
 ```{python}
 #| echo: true
@@ -733,16 +737,16 @@ TRIALS = int(5e4)
 
 np.random.seed(211)
 
-CONTROL_RATE = 0.65
-TREATMENT_RATE = 0.66
+control_RATE = 0.65
+treatment_RATE = 0.66
 df_agg = (
     pd.DataFrame(
         {
             "A": np.random.binomial(
-                TRIALS, CONTROL_RATE, 1
+                TRIALS, control_RATE, 1
             ),
             "B": np.random.binomial(
-                TRIALS, TREATMENT_RATE, 1
+                TRIALS, treatment_RATE, 1
             ),
         }
     )
@@ -805,7 +809,7 @@ display(df_agg.set_index("recipe")[[ "Trials","Conversions", "Rate"]])
 ```
 
 <br>
-In this simulation, `Control` underpeformed and `Treatment` outperformed their true averages; causing an inflated estimate of `{python} f"{delta_to_control_string}"` and p-value = `{python} f"{p_value:.15f}"`.
+In this simulation, `control` underpeformed and `treatment` outperformed their true averages; causing an inflated estimate of `{python} f"{delta_to_control_string}"` and p-value = `{python} f"{p_value:.15f}"`.
 
 ### Regularization
 
@@ -970,4 +974,4 @@ As shown above,  statistical significance conditions on extreme results, biasing
 
 Even a properly designed experiment with 80% statistical power, a statistically significant result is more likely to overestimate than underestimate the true delta-to-control — 62.5% of the time.
 
-**In short**: Statistical significance answers whether an effect exists; priors and power determine how large it is likely to be.
+**In short**: Statistical significance tells you that an effect exists, not how large it is — estimating magnitude requires more than hypothesis testing alone.
