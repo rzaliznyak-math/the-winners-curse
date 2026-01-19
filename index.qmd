@@ -17,9 +17,9 @@ format:
 
 This article is written for practitioners who run experiments and rely on statistical significance to make decisions about effect sizes.
 
-You ran your A/B test properly: you determined your required sample size in advance, collected all of your data, and calculated a p-value < 0.01 at the end of the experiment.
+Statistical significance indicates that Control and Treatment are unlikely to be equal, not that the observed effect size is an accurate estimate of the true effect.
 
-But **statistical significance is not an endorsement of the observed treatment effect**. 
+In other words, **statistical significance is not an endorsement of the observed treatment effect**. 
 Below we show why conditioning on statistical significance systematically inflates effect sizes, quantify how often this happens, and outline what to do when accuracy matters.
 
 # AB Test Setup
@@ -56,7 +56,7 @@ index_to_control_planned = mde / 100
 delta_to_control_planned = control_mean*index_to_control_planned - control_mean
 ```
 
-> **Note**: An MDE (index-to-control) of 101 corresponds to a +1% relative change --- in this case going from 65% to 65.65% --- a delta-to-control of 0.65%.
+> **Note**: An MDE (index-to-control) of 101 corresponds to a +1% relative change --- in this case increasing `baseline rate` from 65% to 65.65% --- a delta-to-control of 0.65%.
 
 
 ## Statistical Power
@@ -612,11 +612,11 @@ significant experiments overestimated the true effect --- delta-to-control = 0.6
 
 # What To Do
 
-Effect size inflation is unavoidable in low and moderate powered experiments. Practitioners have two options: increase statistical power to reduce the magnitude of the bias, or use priors to produce more stable effect size estimates across repeated experiments.
+Effect size inflation is unavoidable in low-powered experiments. Practitioners have two options: increase statistical power to reduce the magnitude of the bias, or use priors to produce more stable effect size estimates across repeated experiments.
 
 ## Option 1: Increase Power
 
-You can increase your statistical power to reduce the chance of effect size inflation. But the problem of over-estimates never truly vanishes.
+If you can afford to acquire more samples, increase your statistical power to reduce the chance of effect size inflation. But the problem of over-estimates never vanishes.
 
 ```{python}
 import plotly.express as px
@@ -663,16 +663,16 @@ fig.show()
 
 - Until an experiment reaches 50% power, statistically significant results are guaranteed to overestimate the true effect.
 
-- The share of overestimates reaches its minimum of 50% at 100% power.
+- At 100% power, the minimum achievable overestimation rate is 50%.
 
 
 ## Option 2: Use Priors
 
 If accurate effect size estimates is the goal, using prior information becomes necessary. <br>
 
-### How It Works
+<!--### How It Works-->
 
-Priors are weighed against observed results using precision-weighted averaging, so noisier experimental estimates are shrunk more aggressively toward historical baselines.
+Prior beliefs are weighed against observed results using precision-weighted averaging, so noisier experimental estimates are shrunk more aggressively toward historical baselines.
 
 ```{python}
 #| code-summary: "<b>Method to Regularize Estimates</b>"
@@ -808,6 +808,8 @@ display(df_agg.set_index("recipe")[[ "Trials","Conversions", "Rate"]])
 In this simulation, `Control` underpeformed and `Treatment` outperformed their true averages; causing an inflated estimate of `{python} f"{delta_to_control_string}"` and p-value = `{python} f"{p_value:.15f}"`.
 
 ### Regularization
+
+In practice, **regularization** means shrinking experimental results toward historical averages rather than taking each statistically significant result at face value.
 
 ```{python}
 #| code-summary: "plotting function code"
@@ -966,6 +968,6 @@ The posterior estimate is a precision-weighted average of the prior and the obse
 
 As shown above,  statistical significance conditions on extreme results, biasing reported effect sizes upward --- **the Winner’s Curse**.
 
-Even in a properly designed experiment with 80% statistical power, a statistically significant result is more likely to overestimate than underestimate the true delta-to-control — 62.5% of the time.
+Even a properly designed experiment with 80% statistical power, a statistically significant result is more likely to overestimate than underestimate the true delta-to-control — 62.5% of the time.
 
-**In short**: statistical significance provides evidence that an effect exists, not that the observed effect size is accurate.
+**In short**: Statistical significance answers whether an effect exists; priors and power determine how large it is likely to be.
