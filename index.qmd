@@ -13,7 +13,6 @@ format:
     toc-indent: 1em
 ---
 
-![](./assets/top.png)
 
 # Introduction
 
