@@ -2,7 +2,7 @@
 title: "The Winner's Curse"
 subtitle: "Significance Testing is Not an Endorsement of the Treatment Effect"
 author: "Russ Zaliznyak <[rzaliznyak@gmail.com](mailto:rzaliznyak@gmail.com)>"
-date: "2026-01-19"
+date: "2026-01-20"
 execute:
   echo: false
 format: 
@@ -37,7 +37,7 @@ control_mean = 0.65
 ```
 
 ## Significance Threshold
-Use a traditional _significance threshold_ of 0.05. If our test conditions are equal, 5% of the time we will accidentally and falsely detect a signal _(Type I Error)_.
+Use a traditional _significance threshold_ of 0.05. If our test conditions are equal, 5% of the time we will incorrectly and falsely detect a signal _(Type I Error)_.
 ```{python}
 #| echo: true
 #| code-fold: false
