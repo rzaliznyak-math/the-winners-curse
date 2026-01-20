@@ -13,6 +13,7 @@ format:
     toc-indent: 1em
 ---
 
+![Only extreme results pass the significance threshold - biasing reported effect sizes upward — **the Winner’s Curse**](./assets/top.png)
 
 # Introduction
 
