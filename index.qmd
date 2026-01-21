@@ -976,4 +976,4 @@ As shown above,  statistical significance conditions on extreme results, biasing
 
 Even a properly designed experiment with 80% statistical power, a statistically significant result is more likely to overestimate than underestimate the true delta-to-control — 62.5% of the time.
 
-**In short**: Statistical significance reliably tells us When an effect exists, not how large it is — estimating magnitude requires more than hypothesis testing alone.
+**In short**: Statistical significance reliably tells us when an effect exists, not how large it is — estimating magnitude requires more than hypothesis testing alone.
